@@ -1,28 +1,52 @@
-#include <Wire.h>   
+#include <Wire.h>
+#include <Servo.h>   
 #include "pinmap.h"
 
-void setup() {
+//-------------------------------
+// GLOBAL VARIABLES
+Servo torpedo_servo1, torpedo_servo2;
+//-------------------------------
 
-}
-
-void loop() {
-  digitalWrite(LED_GRN, HIGH);
-
+// SETUP FUNCTIONS
+//-------------------------------
+//-------------------------------
+// DROPPER SETUP FUNCTION
+void dropper_setup() {
   digitalWrite(DROP1_CTRL, HIGH);
   digitalWrite(DROP2_CTRL, HIGH);
-  
-  digitalWrite(SERVO1_CTRL, HIGH);
-  digitalWrite(SERVO2_CTRL, HIGH);
-
-  delay(500);
-
-  digitalWrite(LED_GRN, LOW);
-
-  digitalWrite(DROP1_CTRL, LOW);
-  digitalWrite(DROP2_CTRL, LOW);
-  
-  digitalWrite(SERVO1_CTRL, LOW);
-  digitalWrite(SERVO2_CTRL, LOW);
-
-  delay(500);
 }
+//-------------------------------
+
+//-------------------------------
+// TORPEDO SERVO SETUP FUNCTION
+void torpedo_servo_setup() {
+  torpedo_servo1.attatch(SERVO1_CTRL);
+  torpedo_servo2.attatch(SERVO2_CTRL);
+}
+//-------------------------------
+
+//-------------------------------
+// FULL BOARD SETUP FUNCTION
+void setup() {
+  dropper_setup();
+  torpedo_servo_setup();
+}
+//-------------------------------
+//-------------------------------
+
+// GENERAL RUNTIME TASK FUNCTIONS
+//-------------------------------
+//-------------------------------
+// 
+void task_torpedo_servo() {
+  
+}
+//-------------------------------
+
+//-------------------------------
+//
+void loop() {
+  
+}
+//-------------------------------
+//-------------------------------
