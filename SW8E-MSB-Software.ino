@@ -33,6 +33,9 @@ bool reset_received, drop_eng_received, drop_diseng_received, servo1_received, s
 void setup() {
     pinMode(DROP1_CTRL, OUTPUT);
     pinMode(DROP2_CTRL, OUTPUT);
+    pinMode(LED_GRN, OUTPUT);
+    pinMode(SERVO1_CTRL, OUTPUT);
+    pinMode(SERVO2_CTRL, OUTPUT);
     
     digitalWrite(DROP1_CTRL, LOW);
     digitalWrite(DROP2_CTRL, LOW);
@@ -44,6 +47,7 @@ void setup() {
     torpedo_servo2.attach(SERVO2_CTRL);
     
     Wire.begin(ADDRESS);
+    Wire.onReceive(task_receive_message);
     
     reset_received = false;
     drop_eng_received = false;
@@ -58,6 +62,7 @@ void setup() {
 
 // TODO change this to a bitmap for flags
 void task_receive_message(int bytes) {
+  digitalWrite(LED_GRN, HIGH);
   while(Wire.available()) {
     switch(Wire.read()) {
         case RESET:
@@ -76,7 +81,6 @@ void task_receive_message(int bytes) {
             servo2_received = true;
             break;
         default:
-          digitalWrite(LED_GRN, HIGH);
           break;
     } 
   }
@@ -124,7 +128,6 @@ void task_dropper_ctrl(char direction) {
 }
 
 void loop() {
-    Wire.onReceive(task_receive_message);
     
     if(reset_received) {
         task_reset();
