@@ -2,30 +2,30 @@
 #include <Servo.h>   
 #include "pinmap.h"
 
+// IDs for Identifying which tool to select
 #define DROP1_ID    1
 #define DROP2_ID    2
 #define SERVO1_ID   1
 #define SERVO2_ID   2
 
+//------------------
 // COMMAND STRUCTURE
-#define RESET       0
-#define DROP1_TRIG  1
-#define DROP2_TRIG  2
-#define SERVO1_TRIG 3
-#define SERVO2_TRIG 4
+//------------------
+#define RESET             0
+#define DROP_ENG_TRIG     1
+#define DROP_DISENG_TRIG  2
+#define SERVO1_TRIG       3
+#define SERVO2_TRIG       4
 
-#define QUEUE_SIZE  8
-#define ADDRESS 0000000 // the 7-bit slave address
+#define ADDRESS 0x20 // the 7-bit slave address
+#define OFF false
+#define ON  true
 
 //-------------------------------
 // GLOBAL VARIABLES
 //-------------------------------
 Servo torpedo_servo1, torpedo_servo2;
-char message_queue[QUEUE_SIZE];
-char* message_queue_write_ptr;
-char* message_queue_read_ptr;
-
-bool reset_received, drop1_received, drop2_received, servo1_received, servo2_received;
+bool reset_received, drop_eng_received, drop_diseng_received, servo1_received, servo2_received;
 
 //-------------------------------
 // SETUP FUNCTION
@@ -45,16 +45,9 @@ void setup() {
     
     Wire.begin(ADDRESS);
     
-    message_queue_write_ptr = message_queue;
-    message_queue_read_ptr = message_queue;
-    
-    for(int i = 0; i < QUEUE_SIZE; i++) {
-        message_queue[i] = '\0'; 
-    }
-    
     reset_received = false;
-    drop1_received = false;
-    drop2_received = false;
+    drop_eng_received = false;
+    drop_diseng_received = false;
     servo1_received = false;
     servo2_received = false;
 }
@@ -62,23 +55,26 @@ void setup() {
 //-------------------------------
 // TASK FUNCTIONS
 //-------------------------------
+
+// TODO change this to a bitmap for flags
 void task_receive_message(int bytes) {
   while(Wire.available()) {
     switch(Wire.read()) {
-        case 0:
+        case RESET:
             reset_received = true;
             break;
-        case 1:
-            drop1_received = true;
+        case DROP_ENG_TRIG:
+            drop_eng_received = true;
             break;
-        case 2:
-            drop2_received = true;
+        case DROP_DISENG_TRIG:
+            drop_diseng_received = true;
             break;
-        case 3:
+        case SERVO1_TRIG:
             servo1_received = true;
             break;
-        case 4:
-            
+        case SERVO2_TRIG:
+            servo2_received = true;
+            break;
         default:
           digitalWrite(LED_GRN, HIGH);
           break;
@@ -93,16 +89,9 @@ void task_reset() {
     digitalWrite(SERVO2_CTRL, LOW);
     digitalWrite(LED_GRN, LOW);     //currently used as a debug LED
     
-    message_queue_write_ptr = message_queue;
-    message_queue_read_ptr = message_queue;
-    
-    for(int i = 0; i < QUEUE_SIZE; i++) {
-        message_queue[i] = '\0'; 
-    }
-    
     reset_received = false;
-    drop1_received = false;
-    drop2_received = false;
+    drop_eng_received = false;
+    drop_diseng_received = false;
     servo1_received = false;
     servo2_received = false;
 }
@@ -111,49 +100,54 @@ void task_torpedo_servo(char servo) {
     switch(servo) {
         case SERVO1_ID:
             torpedo_servo1.write(45);
+            digitalWrite(LED_GRN, HIGH);
         case SERVO2_ID:
             torpedo_servo2.write(45);
+            digitalWrite(LED_GRN, HIGH);
             break;
         default:
-            digitalWrite(LED_GRN, HIGH);
             break; 
     }
 }
 
-void task_dropper_ctrl(char dropper) {
-    switch(dropper) {
-        case DROP1_ID:
-            digitalWrite(DROP2_CTRL, HIGH);
-            break;
-        case DROP2_ID:
-            digitalWrite(DROP2_CTRL, HIGH);
-            break;
-        default:
-            digitalWrite(LED_GRN, HIGH);
-            break;
-    }
+void task_dropper_ctrl(char direction) {
+  if (direction) {
+    digitalWrite(DROP1_CTRL, HIGH);
+    digitalWrite(DROP2_CTRL, HIGH);
+    digitalWrite(LED_GRN, HIGH);
+  } else {
+    digitalWrite(DROP1_CTRL, LOW);
+    digitalWrite(DROP2_CTRL, LOW);
+    digitalWrite(LED_GRN, OFF);
+  }
+
 }
 
 void loop() {
-    Wire.onReceive(task_receive_message(1));
+    Wire.onReceive(task_receive_message);
     
     if(reset_received) {
         task_reset();
+        reset_received = false;
     }
     
-    if(drop1_received) {
-        task_dropper_ctrl(DROP1_ID); 
+    if(drop_eng_received) {
+        task_dropper_ctrl(ON);
+        drop_eng_received = false;
     }
     
-    if(drop2_received) {
-        task_dropper_ctrl(DROP2_ID); 
+    if(drop_diseng_received) {
+        task_dropper_ctrl(OFF); 
+        drop_diseng_received = false;
     }
     
     if(servo1_received) {
         task_torpedo_servo(SERVO1_ID); 
+        servo1_received = false;        
     }
     
     if(servo2_received) {
         task_torpedo_servo(SERVO2_ID); 
+        servo2_received = false;
     }
 }
