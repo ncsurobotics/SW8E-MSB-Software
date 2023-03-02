@@ -24,13 +24,12 @@ char* message_queue_read_ptr;
 void setup() {
     pinMode(DROP1_CTRL, OUTPUT);
     pinMode(DROP2_CTRL, OUTPUT);
-    pinMode(SERVO1_CTRL, OUTPUT);
-    pinMode(SERVO2_CTRL, OUTPUT);
     
     digitalWrite(DROP1_CTRL, LOW);
     digitalWrite(DROP2_CTRL, LOW);
     digitalWrite(SERVO1_CTRL, LOW);
     digitalWrite(SERVO2_CTRL, LOW);
+    digitalWrite(LED_GRN, LOW);     //currently used as a debug LED
   
     torpedo_servo1.attatch(SERVO1_CTRL);
     torpedo_servo2.attatch(SERVO2_CTRL);
@@ -55,13 +54,32 @@ void task_recieve_message(int bytes) {
 }
 
 void task_torpedo_servo(char servo) {
-    
+    switch(servo) {
+        case SERVO1_ID:
+            torpedo_servo1.write(45);
+        case SERVO2_ID:
+            torpedo_servo2.write(45);
+            break;
+        default:
+            digitalWrite(LED_GRN, HIGH);
+            break; 
+    }
 }
 
-void task_dropper_ctrl(char servo) {
-    
+void task_dropper_ctrl(char dropper) {
+    switch(dropper) {
+        case DROP1_ID:
+            digitalWrite(DROP2_CTRL, HIGH);
+            break;
+        case DROP2_ID:
+            digitalWrite(DROP2_CTRL, HIGH);
+            break;
+        default:
+            digitalWrite(LED_GRN, HIGH);
+            break;
+    }
 }
 
 void loop() {
-    Wire.onRecieve(task_recieve_message(1)
+    Wire.onRecieve(task_recieve_message(1));
 }
