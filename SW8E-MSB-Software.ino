@@ -15,7 +15,7 @@
 #define SERVO2_TRIG 4
 
 #define QUEUE_SIZE  8
-#define ADDRESS _______ // the 7-bit slave address
+#define ADDRESS 0000000 // the 7-bit slave address
 
 //-------------------------------
 // GLOBAL VARIABLES
@@ -25,7 +25,7 @@ char message_queue[QUEUE_SIZE];
 char* message_queue_write_ptr;
 char* message_queue_read_ptr;
 
-bool reset_recieved, drop1_recieved, drop2_recieved, servo1_recieved, servo2_recieved;
+bool reset_received, drop1_received, drop2_received, servo1_received, servo2_received;
 
 //-------------------------------
 // SETUP FUNCTION
@@ -40,8 +40,8 @@ void setup() {
     digitalWrite(SERVO2_CTRL, LOW);
     digitalWrite(LED_GRN, LOW);     //currently used as a debug LED
   
-    torpedo_servo1.attatch(SERVO1_CTRL);
-    torpedo_servo2.attatch(SERVO2_CTRL);
+    torpedo_servo1.attach(SERVO1_CTRL);
+    torpedo_servo2.attach(SERVO2_CTRL);
     
     Wire.begin(ADDRESS);
     
@@ -52,21 +52,21 @@ void setup() {
         message_queue[i] = '\0'; 
     }
     
-    reset_receieved = false;
+    reset_received = false;
     drop1_received = false;
     drop2_received = false;
-    servo1_recieved = false;
-    servo2_recieved = false;
+    servo1_received = false;
+    servo2_received = false;
 }
 
 //-------------------------------
 // TASK FUNCTIONS
 //-------------------------------
-void task_recieve_message(int bytes) {
+void task_receive_message(int bytes) {
   while(Wire.available()) {
     switch(Wire.read()) {
         case 0:
-            reset_receieved = true;
+            reset_received = true;
             break;
         case 1:
             drop1_received = true;
@@ -75,7 +75,7 @@ void task_recieve_message(int bytes) {
             drop2_received = true;
             break;
         case 3:
-            servo1_recieved = true;
+            servo1_received = true;
             break;
         case 4:
             
@@ -86,7 +86,7 @@ void task_recieve_message(int bytes) {
   }
 }
 
-void task_reset {
+void task_reset() {
     digitalWrite(DROP1_CTRL, LOW);
     digitalWrite(DROP2_CTRL, LOW);
     digitalWrite(SERVO1_CTRL, LOW);
@@ -100,11 +100,11 @@ void task_reset {
         message_queue[i] = '\0'; 
     }
     
-    reset_receieved = false;
+    reset_received = false;
     drop1_received = false;
     drop2_received = false;
-    servo1_recieved = false;
-    servo2_recieved = false;
+    servo1_received = false;
+    servo2_received = false;
 }
 
 void task_torpedo_servo(char servo) {
@@ -135,25 +135,25 @@ void task_dropper_ctrl(char dropper) {
 }
 
 void loop() {
-    Wire.onRecieve(task_recieve_message(1));
+    Wire.onReceive(task_receive_message(1));
     
-    if(reset_recieved) {
+    if(reset_received) {
         task_reset();
     }
     
-    if(drop1_recieved) {
+    if(drop1_received) {
         task_dropper_ctrl(DROP1_ID); 
     }
     
-    if(drop2_recieved) {
+    if(drop2_received) {
         task_dropper_ctrl(DROP2_ID); 
     }
     
-    if(servo1_recieved) {
+    if(servo1_received) {
         task_torpedo_servo(SERVO1_ID); 
     }
     
-    if(servo2_recieved) {
+    if(servo2_received) {
         task_torpedo_servo(SERVO2_ID); 
     }
 }
