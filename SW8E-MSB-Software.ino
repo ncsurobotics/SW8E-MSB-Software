@@ -103,7 +103,6 @@ void setup() {
 
 // TODO change this to a bitmap for flags
 void task_receive_message(int bytes) {
-  digitalWrite(LED_GRN, HIGH);
   while(Wire.available()) {
     switch(Wire.read()) {
         case RESET:
@@ -132,7 +131,6 @@ void task_reset() {
     digitalWrite(DROP2_CTRL, LOW);
     digitalWrite(SERVO1_CTRL, LOW);
     digitalWrite(SERVO2_CTRL, LOW);
-    digitalWrite(LED_GRN, LOW);     //currently used as a debug LED
     
     reset_received = false;
     drop_eng_received = false;
@@ -145,10 +143,8 @@ void task_torpedo_servo(char servo) {
     switch(servo) {
         case SERVO1_ID:
             torpedo_servo1.write(45);
-            digitalWrite(LED_GRN, HIGH);
         case SERVO2_ID:
             torpedo_servo2.write(45);
-            digitalWrite(LED_GRN, HIGH);
             break;
         default:
             break; 
@@ -159,11 +155,9 @@ void task_dropper_ctrl(char direction) {
   if (direction) {
     digitalWrite(DROP1_CTRL, HIGH);
     digitalWrite(DROP2_CTRL, HIGH);
-    digitalWrite(LED_GRN, HIGH);
   } else {
     digitalWrite(DROP1_CTRL, LOW);
     digitalWrite(DROP2_CTRL, LOW);
-    digitalWrite(LED_GRN, OFF);
   }
 
 }
