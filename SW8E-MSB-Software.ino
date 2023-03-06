@@ -67,6 +67,7 @@ void enableXtal(void)
 //-------------------------------
 Servo torpedo_servo1, torpedo_servo2;
 bool reset_received, drop_eng_received, drop_diseng_received, servo1_received, servo2_received;
+unsigned long led_off_time = 0;
 
 //-------------------------------
 // SETUP FUNCTION
@@ -103,6 +104,10 @@ void setup() {
 
 // TODO change this to a bitmap for flags
 void task_receive_message(int bytes) {
+  digitalWrite(LED_GRN, HIGH);
+  led_off_time = millis() + 500;
+  if(led_off_time == 0)
+    led_off_time = 1;
   while(Wire.available()) {
     switch(Wire.read()) {
         case RESET:
@@ -164,6 +169,11 @@ void task_dropper_ctrl(char direction) {
 
 void loop() {
     
+    if(millis() > led_off_time && led_off_time != 0){
+      led_off_time = 0;
+      digitalWrite(LED_GRN, LOW);
+    }
+
     if(reset_received) {
         task_reset();
         reset_received = false;
