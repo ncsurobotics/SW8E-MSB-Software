@@ -15,7 +15,7 @@
 
 // Servo positions for torpedos
 #define SERVO_RESET_POS 50
-#define SERVO_TRIG_POS 20
+#define SERVO_TRIG_POS 10
 
 // Dropper states
 #define DROPPER_RESET_STATE HIGH
