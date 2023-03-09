@@ -2,24 +2,29 @@
 #include <Servo.h>   
 #include "pinmap.h"
 
-// IDs for Identifying which tool to select
-#define DROP1_ID    1
-#define DROP2_ID    2
-#define SERVO1_ID   1
-#define SERVO2_ID   2
 
 //------------------
 // COMMAND STRUCTURE
 //------------------
-#define RESET             0
-#define DROP_ENG_TRIG     1
-#define DROP_DISENG_TRIG  2
-#define SERVO1_TRIG       3
-#define SERVO2_TRIG       4
+#define RESET             0         // Reset both droppers and torpedos
+#define D1_TRIG           1         // Trigger dropper 1 (drop)
+#define D2_TRIG           2         // Trigger dropper 2 (drop)
+#define SERVO1_TRIG       3         // Trigger torpedo 1 (fire)
+#define SERVO2_TRIG       4         // Trigger torpedo 2 (fire)
 
+
+// Servo positions for torpedos
+#define SERVO_RESET_POS 50
+#define SERVO_TRIG_POS 20
+
+// Dropper states
+#define DROPPER_RESET_STATE HIGH
+#define DROPPER_TRIG_STATE LOW
+
+
+// I2C slave address for MSB
 #define ADDRESS 0x20 // the 7-bit slave address
-#define OFF false
-#define ON  true
+
 
 // Don't try to enable LXFT1.
 // This oscillator isn't connected on these boards
@@ -66,12 +71,38 @@ void enableXtal(void)
 // GLOBAL VARIABLES
 //-------------------------------
 Servo torpedo_servo1, torpedo_servo2;
-bool reset_received, drop_eng_received, drop_diseng_received, servo1_received, servo2_received;
+bool reset_received, drop1_received, drop2_received, servo1_received, servo2_received;
 unsigned long led_off_time = 0;
 
-//-------------------------------
-// SETUP FUNCTION
-//-------------------------------
+
+void on_i2c_receive(int bytes) {
+  digitalWrite(LED_GRN, HIGH);
+  led_off_time = millis() + 100;
+  if(led_off_time == 0)
+    led_off_time = 1;
+  while(Wire.available()) {
+    switch(Wire.read()) {
+        case RESET:
+            reset_received = true;
+            break;
+        case D1_TRIG:
+            drop1_received = true;
+            break;
+        case D2_TRIG:
+            drop2_received = true;
+            break;
+        case SERVO1_TRIG:
+            servo1_received = true;
+            break;
+        case SERVO2_TRIG:
+            servo2_received = true;
+            break;
+        default:
+          break;
+    } 
+  }
+}
+
 void setup() {
     pinMode(DROP1_CTRL, OUTPUT);
     pinMode(DROP2_CTRL, OUTPUT);
@@ -89,113 +120,48 @@ void setup() {
     torpedo_servo2.attach(SERVO2_CTRL);
     
     Wire.begin(ADDRESS);
-    Wire.onReceive(task_receive_message);
+    Wire.onReceive(on_i2c_receive);
     
-    reset_received = false;
-    drop_eng_received = false;
-    drop_diseng_received = false;
+    reset_received = true;          // Reset on first run of loop()
+    drop1_received = false;
+    drop2_received = false;
     servo1_received = false;
     servo2_received = false;
-}
-
-//-------------------------------
-// TASK FUNCTIONS
-//-------------------------------
-
-// TODO change this to a bitmap for flags
-void task_receive_message(int bytes) {
-  digitalWrite(LED_GRN, HIGH);
-  led_off_time = millis() + 500;
-  if(led_off_time == 0)
-    led_off_time = 1;
-  while(Wire.available()) {
-    switch(Wire.read()) {
-        case RESET:
-            reset_received = true;
-            break;
-        case DROP_ENG_TRIG:
-            drop_eng_received = true;
-            break;
-        case DROP_DISENG_TRIG:
-            drop_diseng_received = true;
-            break;
-        case SERVO1_TRIG:
-            servo1_received = true;
-            break;
-        case SERVO2_TRIG:
-            servo2_received = true;
-            break;
-        default:
-          break;
-    } 
-  }
-}
-
-void task_reset() {
-    digitalWrite(DROP1_CTRL, LOW);
-    digitalWrite(DROP2_CTRL, LOW);
-    digitalWrite(SERVO1_CTRL, LOW);
-    digitalWrite(SERVO2_CTRL, LOW);
-    
-    reset_received = false;
-    drop_eng_received = false;
-    drop_diseng_received = false;
-    servo1_received = false;
-    servo2_received = false;
-}
-
-void task_torpedo_servo(char servo) {
-    switch(servo) {
-        case SERVO1_ID:
-            torpedo_servo1.write(45);
-        case SERVO2_ID:
-            torpedo_servo2.write(45);
-            break;
-        default:
-            break; 
-    }
-}
-
-void task_dropper_ctrl(char direction) {
-  if (direction) {
-    digitalWrite(DROP1_CTRL, HIGH);
-    digitalWrite(DROP2_CTRL, HIGH);
-  } else {
-    digitalWrite(DROP1_CTRL, LOW);
-    digitalWrite(DROP2_CTRL, LOW);
-  }
-
 }
 
 void loop() {
     
+    // Turn LED off after blinking to indicate command byte received
     if(millis() > led_off_time && led_off_time != 0){
       led_off_time = 0;
       digitalWrite(LED_GRN, LOW);
     }
 
     if(reset_received) {
-        task_reset();
+        torpedo_servo1.write(SERVO_RESET_POS);
+        torpedo_servo2.write(SERVO_RESET_POS);
+        digitalWrite(DROP1_CTRL, DROPPER_RESET_STATE);
+        digitalWrite(DROP2_CTRL, DROPPER_RESET_STATE);
         reset_received = false;
     }
     
-    if(drop_eng_received) {
-        task_dropper_ctrl(ON);
-        drop_eng_received = false;
+    if(drop1_received) {
+      digitalWrite(DROP1_CTRL, DROPPER_TRIG_STATE);
+      drop1_received = false;
     }
     
-    if(drop_diseng_received) {
-        task_dropper_ctrl(OFF); 
-        drop_diseng_received = false;
+    if(drop2_received) {
+      digitalWrite(DROP2_CTRL, DROPPER_TRIG_STATE);
+      drop2_received = false;
     }
     
     if(servo1_received) {
-        task_torpedo_servo(SERVO1_ID); 
-        servo1_received = false;        
+      torpedo_servo1.write(SERVO_TRIG_POS);
+      servo1_received = false;        
     }
     
     if(servo2_received) {
-        task_torpedo_servo(SERVO2_ID); 
-        servo2_received = false;
+      torpedo_servo2.write(SERVO_TRIG_POS); 
+      servo2_received = false;
     }
 }
