@@ -3,14 +3,13 @@
 //------------------------------------------------
 
 // Pinmap for FR2355 launchpad
-
-#define DROP1_CTRL P2_0
+#define DROP1_CTRL  P2_0
 #define DROP2_CTRL  P2_2
 
 #define SERVO1_CTRL P6_0
 #define SERVO2_CTRL P6_1
 
-#define LED_GRN P6_2
+#define LED_GRN     P6_2
 
 // Note: Reserved P1_2 & P1_3 for I2C ("Wire"); P4_6 & P4_7 shared with SPI ("Wire1")
 // Note: Serial P4_2 & P4_3 are connected to backchannel UART (debug header), Serial1 P1_6 & P1_7
