@@ -14,8 +14,10 @@
 
 
 // Servo positions for torpedos
-#define SERVO_RESET_POS 50
-#define SERVO_TRIG_POS 10
+#define SERVO1_RESET_POS 145
+#define SERVO1_TRIG_POS 30
+#define SERVO2_RESET_POS 30
+#define SERVO2_TRIG_POS 145
 
 // Dropper states
 #define DROPPER_RESET_STATE HIGH
@@ -138,8 +140,8 @@ void loop() {
     }
 
     if(reset_received) {
-        torpedo_servo1.write(SERVO_RESET_POS);
-        torpedo_servo2.write(SERVO_RESET_POS);
+        torpedo_servo1.write(SERVO1_RESET_POS);
+        torpedo_servo2.write(SERVO2_RESET_POS);
         digitalWrite(DROP1_CTRL, DROPPER_RESET_STATE);
         digitalWrite(DROP2_CTRL, DROPPER_RESET_STATE);
         reset_received = false;
@@ -156,12 +158,12 @@ void loop() {
     }
     
     if(servo1_received) {
-      torpedo_servo1.write(SERVO_TRIG_POS);
+      torpedo_servo1.write(SERVO1_TRIG_POS);
       servo1_received = false;        
     }
     
     if(servo2_received) {
-      torpedo_servo2.write(SERVO_TRIG_POS); 
+      torpedo_servo2.write(SERVO2_TRIG_POS); 
       servo2_received = false;
     }
 }
